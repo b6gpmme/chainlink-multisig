@@ -24,22 +24,23 @@ const KOVAN_RPC_URL = process.env.KOVAN_RPC_URL || "https://eth-kovan.alchemyapi
 const MNEMONIC = process.env.MNEMONIC || "your mnemonic"
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "Your etherscan API key"
 // optional
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "your private key"
+const PRIVATE_KEY1 = process.env.PRIVATE_KEY1 || "your private key"
+const PRIVATE_KEY2 = process.env.PRIVATE_KEY2 || "your private key"
 
 module.exports = {
     defaultNetwork: "hardhat",
     networks: {
         hardhat: {
             // // If you want to do some forking, uncomment this
-            // forking: {
-            //   url: MAINNET_RPC_URL
-            // }
+             forking: {
+               url: MAINNET_RPC_URL
+             }
         },
         localhost: {
         },
         kovan: {
             url: KOVAN_RPC_URL,
-            accounts: [PRIVATE_KEY],
+            accounts: [PRIVATE_KEY1, PRIVATE_KEY2],
             //accounts: {
               //  mnemonic: MNEMONIC,
             //},
@@ -73,6 +74,7 @@ module.exports = {
         feeCollector: {
             default: 1
         }
+	
     },
     solidity: {
         compilers: [
