@@ -12,20 +12,26 @@ contract MultiSigWallet {
 	address[] public owners;
 	
 	//Event for when money is deposited
-	event deposit(address indexed sender, uint amount, uint balance);
+	event Deposit(address indexed sender, uint amount, uint balance);
 
 	//Event for when a transaction is submitted
-	event submitTransaction(address indexed owner, uint indexed txIndex, address indexed to, uint value, bytes data);
+	event SubmitTransaction(address indexed owner, uint indexed txIndex, address indexed to, uint value, bytes data);
 
 	//Event for when a transaction is confirmed
-	event confirmTransaction(address indexed owner, uint indexed txIndex);
+	event ConfirmTransaction(address indexed owner, uint indexed txIndex);
 
 	//Event for when a transaction is executed
-	event executeTransaction(address indexed owner, uint indexed txIndex);
+	event ExecuteTransaction(address indexed owner, uint indexed txIndex);
+
+	//Event for when a transaction confirmation is revoked
+	event RevokeConfirmation(address indexed owner, uint indexed txIndex);
+
+	//Event for when a transaction is revoked
+	event RevokeTransaction(address indexed owner, uint indexed txIndex);
 
 	//modifier to only allows owners submit transactions
 	modifier onlyOwner {
-		require(isOwner[msg.sender] "You are not an owner");
+		require(isOwner[msg.sender], "You are not an owner");
 		_;
 	}
 
@@ -64,7 +70,7 @@ contract MultiSigWallet {
 	constructor(address[] memory _owners, uint _numConfirmationsRequired) public {
 		require(_owners.length > 0, "owners requires");
 		require(_numConfirmationsRequired > 0 && _numConfirmationsRequired <= _owners.length, "Confirmation Number Mismatch");
-		for (uint i = 0; i < _owners.length, i++) {
+		for (uint i = 0; i < _owners.length; i++) {
 			address owner = _owners[i];
 
 			require(owner != address(0), "Owner shouldn't be zero address");
@@ -90,7 +96,7 @@ contract MultiSigWallet {
 			numConfirmations: 0
 		}));
 
-		emit submitTransaction(msg.sender,txIndex, _to, _value, _data); 
+		emit SubmitTransaction(msg.sender,txIndex, _to, _value, _data); 
 
 	}
 
@@ -98,16 +104,60 @@ contract MultiSigWallet {
 	function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
 		Transaction storage transaction = transactions[_txIndex];
 		transaction.isConfirmed[msg.sender] = true;
-		transaction.numConfirmation++;
+		transaction.numConfirmations++;
 
-		emit confirmTransaction(msg.sender, _txIndex);
+		emit ConfirmTransaction(msg.sender, _txIndex);
 
 	}
+
+	//Execute a transaction after confirmation
+	function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
+		Transaction storage transaction = transactions[_txIndex];
+
+		require(transaction.numConfirmations >= numConfirmationsRequired, "Not enough confirmations");
+		
+		transaction.executed = true;
+
+		(bool success, ) = transaction.to.call.value(transaction.value)(transaction.data);
+		require (success, "Transaction failed");
+
+		emit ExecuteTransaction(msg.sender, _txIndex);
+	}
+
+	//Revoke a confirmation
+	function revokeConfirmation(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
+		Transaction storage transaction = transactions[_txIndex];
+		require(transaction.isConfirmed[msg.sender] = true);
+		transaction.isConfirmed[msg.sender] = false;
+		transaction.numConfirmations--;
+
+		emit RevokeConfirmation(msg.sender, _txIndex);
+	}
+
+
+
 
 
 	//the fallback emits a Deposit event and allows paying the wallet
 	receive() payable external {
-		emit deposit(msg.sender, msg.value, address(this).balance);
+		emit Deposit(msg.sender, msg.value, address(this).balance);
+	}
+
+	//Get transaction
+	function getTransaction(uint _txIndex) public view returns (address to, uint value, bytes memory data, bool executed, uint numConfirmations)
+	{
+                Transaction storage transaction = transactions[_txIndex];
+		return (transaction.to, transaction.value, transaction.data, transaction.executed, transaction.numConfirmations);
+	}
+
+	//Get Transaction Count
+	function getTransactionCount() public view returns (uint) {
+		return transactions.length;
+	}
+
+	//Get Owners
+	function getOwners() public view returns (address[] memory) {
+		return owners;
 	}
 
 }
