@@ -1,15 +1,18 @@
 pragma solidity ^0.6.6;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
+
 
 contract MultiSigWallet {
-	//establish initial variables
+	//Establish initial variables
 	//numConfirmationsRequired is the number of addresses to use the wallet
 	//isOwner establish who owns the wallet
-	//owners is a list of all owners
+	//Owners is a list of all owners
+	//priceFeed gets ETH/USD Pricefeed
 	uint public numConfirmationsRequired;
 	mapping(address => bool) public isOwner;
 	address[] public owners;
+	AggregatorV3Interface internal priceFeed;
 	
 	//Event for when money is deposited
 	event Deposit(address indexed sender, uint amount, uint balance);
@@ -81,6 +84,8 @@ contract MultiSigWallet {
 		}
 
 		numConfirmationsRequired = _numConfirmationsRequired;
+
+		priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
 	}
 
 
@@ -99,6 +104,8 @@ contract MultiSigWallet {
 		emit SubmitTransaction(msg.sender,txIndex, _to, _value, _data); 
 
 	}
+
+
 
 	//Confirm a transaction from one of the wallet owners
 	function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
@@ -133,6 +140,23 @@ contract MultiSigWallet {
 
 		emit RevokeConfirmation(msg.sender, _txIndex);
 	}
+
+
+	function getBalance() public view returns (uint) {
+		return address(this).balance;
+	}
+
+	function getBalanceInUSD() public view returns (uint) {
+	     	 (
+       			uint80 roundID, 
+         		int price,
+            		uint startedAt,
+            		uint timeStamp,
+            		uint80 answeredInRound
+        	) = priceFeed.latestRoundData();
+		return address(this).balance / uint(price);
+	}
+
 
 
 
