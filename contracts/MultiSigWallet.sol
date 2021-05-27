@@ -12,7 +12,7 @@ contract MultiSigWallet {
 	uint public numConfirmationsRequired;
 	mapping(address => bool) public isOwner;
 	address[] public owners;
-	AggregatorV3Interface internal priceFeed;
+	// AggregatorV3Interface internal priceFeed;
 	
 	//Event for when money is deposited
 	event Deposit(address indexed sender, uint amount, uint balance);
@@ -85,7 +85,7 @@ contract MultiSigWallet {
 
 		numConfirmationsRequired = _numConfirmationsRequired;
 
-		priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
+		//priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
 	}
 
 
@@ -146,16 +146,16 @@ contract MultiSigWallet {
 		return address(this).balance;
 	}
 
-	function getBalanceInUSD() public view returns (uint) {
-	     	 (
-       			uint80 roundID, 
-         		int price,
-            		uint startedAt,
-            		uint timeStamp,
-            		uint80 answeredInRound
-        	) = priceFeed.latestRoundData();
-		return address(this).balance / uint(price);
-	}
+	//function getBalanceInUSD() public view returns (uint) {
+	//     	 (
+       	//		uint80 roundID, 
+        // 		int price,
+        //    		uint startedAt,
+        //    		uint timeStamp,
+        //    		uint80 answeredInRound
+        //	) = priceFeed.latestRoundData();
+	//	return address(this).balance / uint(price);
+	//}
 
 
 
