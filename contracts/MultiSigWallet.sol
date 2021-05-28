@@ -12,7 +12,8 @@ contract MultiSigWallet {
 	uint public numConfirmationsRequired;
 	mapping(address => bool) public isOwner;
 	address[] public owners;
-	// AggregatorV3Interface internal priceFeed;
+	AggregatorV3Interface internal priceFeed;
+	uint priceInUSD;
 	
 	//Event for when money is deposited
 	event Deposit(address indexed sender, uint amount, uint balance);
@@ -85,7 +86,7 @@ contract MultiSigWallet {
 
 		numConfirmationsRequired = _numConfirmationsRequired;
 
-		//priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
+		priceFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
 	}
 
 
@@ -141,26 +142,50 @@ contract MultiSigWallet {
 		emit RevokeConfirmation(msg.sender, _txIndex);
 	}
 
+	    /**
+     * Returns the latest price
+     */
+    function getLatestPrice() public view returns (int) {
+        (
+            uint80 roundID,
+            int price,
+            uint startedAt,
+            uint timeStamp,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
+        return price;
+    }
+
+
 
 	function getBalance() public view returns (uint) {
 		return address(this).balance;
 	}
 
-	//function getBalanceInUSD() public view returns (uint) {
-	//     	 (
-       	//		uint80 roundID, 
-        // 		int price,
-        //    		uint startedAt,
-        //    		uint timeStamp,
-        //    		uint80 answeredInRound
-        //	) = priceFeed.latestRoundData();
-	//	return address(this).balance / uint(price);
-	//}
+	function getBalanceInUSD() public view returns (uint) {
+		uint balanceInEth = address(this).balance / 1e18;
+		return balanceInEth * 1e8 / uint(getLatestPrice());
+	}
 
+	//submit a transaction in USD
 
+	function submitTransactionUSD(address _to, uint _valueUSD, bytes memory _data) public onlyOwner {
 
+		uint _valueETH = _valueUSD * 1e8 / uint(getLatestPrice());
+		uint _value = _valueETH * 1e18;
+        uint txIndex = transactions.length;
 
+                transactions.push(Transaction({
+                        to: _to,
+                        value: _value,
+                        data: _data,
+                        executed: false,
+                        numConfirmations: 0
+                }));
 
+                emit SubmitTransaction(msg.sender,txIndex, _to, _value, _data);
+
+        } 
 
 	//the fallback emits a Deposit event and allows paying the wallet
 	receive() payable external {

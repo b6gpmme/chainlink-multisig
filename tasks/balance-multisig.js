@@ -10,7 +10,7 @@ task("balance-multisig", "Prints the ballance of a MultiSig Wallet")
 
 	const multiSigWalletContract = new ethers.Contract(contractAddr, MultiSigWalletContract.interface , signer);
         await multiSigWalletContract.getBalance().then((data) => {
-            console.log('Balance is: ', web3.utils.fromWei(data, "ether"), "ETH");
+            console.log('Balance is: ', web3.utils.fromWei(data.toString(), "ether"), "ETH");
         });
     });
 
