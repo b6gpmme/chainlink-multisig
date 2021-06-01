@@ -15,6 +15,9 @@ require("./tasks/random-number-consumer")
 require("./tasks/price-consumer")
 require("./tasks/api-consumer")
 require("./tasks/balance-multisig")
+require("./tasks/fund-eth")
+require("./tasks/fund-eth-and-link")
+
 
 
 require('dotenv').config()
