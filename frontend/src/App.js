@@ -13,6 +13,8 @@ const web3 = new Web3(Web3.givenProvider);
 //const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
 
 function App() {
+  //For Accounts
+  //var [account, setAccount] = useState();
   //For Balances
   var [balanceState, setBalanceState] = useState();
   var [balanceUSDState, setBalanceUSDState] = useState();
@@ -27,6 +29,8 @@ function App() {
   var [transactionConfirmations, setTransactionConfirmations] = useState();
   var [transactionCount, setTransactionCount] = useState();
   //var [networkState, setNetworkState] = useState();
+  var [inUSD, setInUSD] = useState();
+
 
 
 
@@ -66,6 +70,21 @@ function App() {
       setTransactionIsExecuted("False");
       };
   }
+  //Submit a transaction in USD
+  async function submitTransactionUSD() {
+    if (typeof window.ethereum !== 'undefined') {
+      await requestAccount();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner()
+      const msw = new ethers.Contract(mswAddress,MultiSigWallet.abi, signer);
+      //const link = new web3.eth.Contract(linkABI, linkAddress);
+      await msw.submitTransactionUSD(transactionReceiver,transactionAmount,transactionData);
+      getTransactionCount();
+      setTransactionIndex((Number(transactionCount) + 1).toString());
+      setTransactionConfirmations("0");
+      setTransactionIsExecuted("False");
+      };
+  }
 
   async function getTransaction() {
     if (typeof window.ethereum !== 'undefined') {
@@ -75,8 +94,8 @@ function App() {
       const msw = new ethers.Contract(mswAddress,MultiSigWallet.abi, signer);
       const transaction = await msw.getTransaction(transactionIndex)
       setTransactionIsExecuted(transaction.executed.toString());
-      setTransactionConfirmations(transaction.numConfirmations.toString());
-      setTransactionAmount(transaction.value.toString());
+      setTransactionConfirmations(transaction.numConfirmations.toString() + " of 2 Required");
+      setTransactionAmount(web3.utils.fromWei(transaction.value.toString(), "ether") + " ETH");
     }
   }
   async function getTransactionCount() {
@@ -112,34 +131,47 @@ function App() {
       };
   }
 
-    //async function getNetwork() {
-    //  if (typeof window.ethereum !== 'undefined') {
-    //    setNetworkState(web3.eth.net.getNetworkType());
-    //  }
-    //}
   getTransactionCount();
+  //initialize();
 
   return (
     <div className="App">
       <header className="App-header">
-        <div>
-          <button onClick={getBalances}>Get Balances</button>
-          <p>{balanceState}</p>
-          <p>{balanceUSDState}</p>
-          <p>{balanceLinkState}</p>
+        <div onChange={e => setInUSD(e.target.value)} placeholder="ETH">
+          <input type="radio" value="ETH" name="Currency" defaultChecked/> ETH
+          <input type="radio" value="USD" name="Currency" /> USD
         </div>
         <div>
-          <button onClick={submitTransaction}>Submit Transaction</button>
-          <input onChange={e => setTransactionReceiver(e.target.value)} placeholder="Set Receiver Address" />
-          <input onChange={e => setTransactionAmount(e.target.value)} placeholder="Set Amount in Wei" />
-          <input onChange={e => setTransactionData(e.target.value)} placeholder="0x" />
+          <button onClick={getBalances}>Get Balances</button>
+          {inUSD === "USD"
+            ? <p>{balanceUSDState}</p>
+            : <p>{balanceState}</p>
+          }
+          <p>{balanceLinkState}</p>
+        </div>
+
+        <div>
+          {inUSD === "USD"
+            ? <div>
+              <button onClick={submitTransactionUSD}>Submit Transaction</button>
+              <input onChange={e => setTransactionReceiver(e.target.value)} placeholder="Set Receiver Address" />
+              <input onChange={e => setTransactionAmount(e.target.value)} placeholder="Set Amount in USD" />
+              <input onChange={e => setTransactionData(e.target.value)} placeholder="0x" />
+              </div>
+            : <div>
+              <button onClick={submitTransaction}>Submit Transaction</button>
+              <input onChange={e => setTransactionReceiver(e.target.value)} placeholder="Set Receiver Address" />
+              <input onChange={e => setTransactionAmount(e.target.value)} placeholder="Set Amount in Wei" />
+              <input onChange={e => setTransactionData(e.target.value)} placeholder="0x" />
+              </div>
+          }
         </div>
         <div>
           <p>Total Transaction Count: {transactionCount}</p>
           <button onClick={getTransaction}>Get Transaction Data</button>
           <input onChange={e => setTransactionIndex(e.target.value)} placeholder = "Index starts at 0" />
           <p>Transaction: {transactionIndex}</p>
-          <p>Confirmations: {transactionConfirmations} of 2 Required</p>
+          <p>Confirmations: {transactionConfirmations}</p>
           <p>Executed: {transactionIsExecuted}</p>
           <p>Amount: {transactionAmount}</p>
         </div>
