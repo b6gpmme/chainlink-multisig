@@ -5,15 +5,13 @@ require("@nomiclabs/hardhat-waffle")
 require("@nomiclabs/hardhat-ethers")
 require("@nomiclabs/hardhat-truffle5")
 require("@nomiclabs/hardhat-etherscan")
+require("hardhat-deploy-ethers")
 require("hardhat-deploy")
 require("./tasks/accounts")
 require("./tasks/balance")
 require("./tasks/fund-link")
 require("./tasks/block-number")
 require("./tasks/block-number")
-require("./tasks/random-number-consumer")
-require("./tasks/price-consumer")
-require("./tasks/api-consumer")
 require("./tasks/balance-multisig")
 require("./tasks/fund-eth")
 require("./tasks/fund-eth-and-link")
@@ -90,6 +88,9 @@ module.exports = {
             }
         ]
     },
+	paths: {
+		artifacts: './frontend/src/artifacts'
+	},
     mocha: {
         timeout: 100000
     }

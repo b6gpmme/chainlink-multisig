@@ -8,14 +8,14 @@ task("fund-eth", "Funds a contract with .01 ETH")
         let networkId = await getNetworkIdFromName(network.name)
         console.log("Funding contract ", contractAddr, " on network ", network.name)
         
-        //Fund with .01
+        //Fund with .01 ETH
         const amount = web3.utils.toHex(16)
 
         //Get signer information
         const accounts = await ethers.getSigners()
         const signer = accounts[0]
 
-        //Create connection to Eth contract and initiate the transfer
+        //Create transaction and send
         const ethtx = await signer.sendTransaction({
         to: contractAddr,
         value: amount,

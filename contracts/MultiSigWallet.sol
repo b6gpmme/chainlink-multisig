@@ -1,7 +1,7 @@
 pragma solidity ^0.6.6;
 
+//Import chainlink price feed interface
 import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
-
 
 contract MultiSigWallet {
 	//Establish initial variables
@@ -9,6 +9,7 @@ contract MultiSigWallet {
 	//isOwner establish who owns the wallet
 	//Owners is a list of all owners
 	//priceFeed gets ETH/USD Pricefeed
+	//priceInUSD is the current ETH price in USD
 	uint public numConfirmationsRequired;
 	mapping(address => bool) public isOwner;
 	address[] public owners;
@@ -33,25 +34,25 @@ contract MultiSigWallet {
 	//Event for when a transaction is revoked
 	event RevokeTransaction(address indexed owner, uint indexed txIndex);
 
-	//modifier to only allows owners submit transactions
+	//Modifier to only allows owners submit transactions
 	modifier onlyOwner {
 		require(isOwner[msg.sender], "You are not an owner");
 		_;
 	}
 
-	//modifier to confirm a transaction exits
+	//Modifier to confirm a transaction exits
 	modifier txExists(uint _txIndex) {
 		require(_txIndex < transactions.length, "Transaction doesn't exist!");
 		_;
 	}
 
-	//modifier to confirm a transaction's execution status
+	//Modifier to confirm a transaction's execution status
 	modifier notExecuted(uint _txIndex) {
 		require(!transactions[_txIndex].executed, "Transaction has been executed");
 		_;
 	}
 
-	//modifier to determine transaction's confirmation status
+	//Modifier to determine transaction's confirmation status
 	modifier notConfirmed(uint _txIndex) {
 		require(!transactions[_txIndex].isConfirmed[msg.sender], "tx already confirmed");
 		_;
@@ -142,9 +143,7 @@ contract MultiSigWallet {
 		emit RevokeConfirmation(msg.sender, _txIndex);
 	}
 
-	    /**
-     * Returns the latest price
-     */
+	//Get the latest ETH price in USD
     function getLatestPrice() public view returns (int) {
         (
             uint80 roundID,
@@ -156,20 +155,19 @@ contract MultiSigWallet {
         return price;
     }
 
+	//Get balance in wei
 	function getBalance() public view returns (uint) {
 		return address(this).balance;
 	}
 
-	//get balance in USD
-
+	//Get balance in USD
 	function getBalanceInUSD() public view returns (uint) {
 		//accounting for fractions of eth
 		//priceFeed returns 8 decimals, 10^18 WEI = 1 ETH, so divide the multiplication by 10^26
 		return address(this).balance * uint(getLatestPrice()) / 100000000000000000000000000;
 	}
 
-	//submit a transaction in USD
-
+	//Submit a transaction in USD
 	function submitTransactionUSD(address _to, uint _valueUSD, bytes memory _data) public onlyOwner {
 		///pricefeed is 8 decimals so multiply by 10^8 to get an integer USD value then multiply by 10^18 for WEI
 		uint _value = _valueUSD*100000000000000000000000000/uint(getLatestPrice());
@@ -187,7 +185,7 @@ contract MultiSigWallet {
 
         } 
 
-	//the fallback emits a Deposit event and allows paying the wallet
+	//The fallback emits a Deposit event and allows paying the wallet
 	receive() payable external {
 		emit Deposit(msg.sender, msg.value, address(this).balance);
 	}

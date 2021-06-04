@@ -1,30 +1,32 @@
 let { networkConfig } = require('../helper-hardhat-config')
 const hardhat = require("hardhat");
+
+//deployments to deploy
+//getNamedAccounts to get a deployer
+//getChainId for the fund commands
 module.exports = async ({
 	deployments,
 	getNamedAccounts,
-	getUnnamedAccounts,
 	getChainId
 }) => {
 	const { deploy } = deployments;
 	const { deployer } = await getNamedAccounts();
-	const accounts = await hre.ethers.getSigners();
+
+	//Multiple addresses needed to construct a multisig
 	const addresses = (await ethers.getSigners()).map(s => s.address)
 	const chainId = await getChainId()
-
-
-	//const addresses = [accounts[0].address, accounts[1].address];
-
 	console.log("Being deployed from: ", deployer);
 	console.log("Two Signers are: ", addresses);
 
 
+	//Deploy with two signers and two confirmations requred
 	const multsigWallet = await deploy("MultiSigWallet", {
 		from: deployer,
 		args: [addresses, 2],
 		log: false
 	});
 
+	//Suggest potential tasks
 	console.log("Run the following command to fund contract with LINK:")
  	console.log("npx hardhat fund-link --contract " + multsigWallet.address + " --network " + networkConfig[chainId]['name'])
   	console.log("Run the following command to fund contract with ETH:")
